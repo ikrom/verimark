@@ -1,0 +1,21 @@
+---
+import BaseLayout from "~/layouts/BaseLayout.astro";
+---
+<BaseLayout title="Privacy — Verimark">
+  <article class="max-w-2xl mx-auto p-6 prose dark:prose-invert">
+    <h1>Privacy</h1>
+    <p>Verimark is a 100% client-side web application. Your files are processed entirely in your browser and never uploaded to any server.</p>
+    <h2>What we don't collect</h2>
+    <ul>
+      <li>Files you watermark</li>
+      <li>Watermark text or hash values</li>
+      <li>Personal identifiers</li>
+    </ul>
+    <h2>What we do</h2>
+    <p>Run static JavaScript in your browser. The site is served from a CDN (Vercel) which may log standard HTTP request metadata per their privacy policy. We do not control or use this data.</p>
+    <h2>Network monitor</h2>
+    <p>Verimark monkey-patches <code>window.fetch</code> and <code>XMLHttpRequest.prototype.send</code> to display a live "0 bytes uploaded" counter. This is for transparency — verify in DevTools that no data leaves your device.</p>
+    <h2>Hash provenance</h2>
+    <p>When you watermark a file, its SHA-256 hash is computed locally via the Web Crypto API. The hash is embedded in the watermark text and a QR code, allowing the recipient to re-hash their file and confirm it matches.</p>
+  </article>
+</BaseLayout>

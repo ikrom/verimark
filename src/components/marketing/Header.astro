@@ -1,0 +1,19 @@
+---
+const path = Astro.url.pathname;
+const isActive = (p: string) => path === p || path === `${p}/`;
+---
+<header class="border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-950/80 backdrop-blur sticky top-0 z-40">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+    <a href="/" class="flex items-center gap-2 font-bold text-lg">
+      <svg class="size-6 text-accent-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.745 3.745 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.745 3.745 0 013.296-1.043A3.745 3.745 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.745 3.745 0 013.296 1.043 3.745 3.745 0 011.043 3.296A3.745 3.745 0 0121 12z" />
+      </svg>
+      <span>Verimark</span>
+    </a>
+    <nav class="flex items-center gap-4 text-sm">
+      <a href="/verify" class={`hover:text-accent-600 ${isActive("/verify") ? "text-zinc-900 dark:text-zinc-100 font-medium" : "text-zinc-500"}`}>Verify</a>
+      <a href="/privacy" class={`hover:text-accent-600 ${isActive("/privacy") ? "text-zinc-900 dark:text-zinc-100 font-medium" : "text-zinc-500"}`}>Privacy</a>
+      <a href="https://github.com/" target="_blank" rel="noopener noreferrer" class="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100">GitHub</a>
+    </nav>
+  </div>
+</header>

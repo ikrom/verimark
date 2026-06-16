@@ -1,0 +1,82 @@
+---
+import BaseLayout from "~/layouts/BaseLayout.astro";
+
+const h = Astro.url.searchParams.get("h") ?? "";
+const t = Astro.url.searchParams.get("t") ?? "";
+---
+<BaseLayout title="Verify provenance — Verimark" description="Re-hash a file to verify it matches a Verimark watermark.">
+  <div class="max-w-2xl mx-auto p-6">
+    <h1 class="text-3xl font-bold tracking-tight mb-2">Verify provenance</h1>
+    <p class="text-zinc-600 dark:text-zinc-400 mb-6">
+      Drop or pick the file you received. We'll hash it locally and compare against the hash embedded in the watermark.
+    </p>
+
+    <div id="verify-root" data-hash={h} data-timestamp={t} class="space-y-4"></div>
+
+    <div class="mt-8 text-sm text-zinc-500">
+      <p>All hashing happens in your browser. The file is never sent to any server.</p>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  import { sha256Hex } from "~/lib/crypto";
+
+  const root = document.getElementById("verify-root");
+  if (root) {
+    const expectedHash = root.dataset.hash ?? "";
+    const timestamp = root.dataset.timestamp ?? "";
+    const fmt = (s: string) => `${s.slice(0, 8)}…${s.slice(-8)}`;
+
+    root.innerHTML = `
+      ${expectedHash ? `
+        <div class="rounded-2xl border border-zinc-200 dark:border-zinc-800 p-5 bg-white dark:bg-zinc-900">
+          <p class="text-xs uppercase tracking-wider text-zinc-500 mb-2">Expected SHA-256</p>
+          <p class="font-mono text-sm break-all mb-2">${expectedHash}</p>
+          ${timestamp ? `<p class="text-xs text-zinc-500">Embedded at: ${new Date(timestamp).toLocaleString()}</p>` : ""}
+        </div>
+      ` : `
+        <div class="rounded-2xl border border-zinc-200 dark:border-zinc-800 p-5 bg-white dark:bg-zinc-900 text-sm text-zinc-500">
+          No hash in URL. Drop a file below to compute its hash.
+        </div>
+      `}
+      <label class="block">
+        <span class="text-sm font-medium mb-2 block">Drop or pick the file</span>
+        <input type="file" id="verify-file" class="block w-full text-sm border border-zinc-300 dark:border-zinc-700 rounded-lg p-2 bg-white dark:bg-zinc-800" />
+      </label>
+      <div id="verify-result" class="hidden rounded-2xl border p-4 text-sm"></div>
+    `;
+
+    const fileInput = document.getElementById("verify-file") as HTMLInputElement | null;
+    const result = document.getElementById("verify-result");
+    if (fileInput && result) {
+      fileInput.addEventListener("change", async () => {
+        const f = fileInput.files?.[0];
+        if (!f) return;
+        result.classList.remove("hidden");
+        result.className = "block rounded-2xl border border-zinc-300 dark:border-zinc-700 p-4 text-sm";
+        result.innerHTML = `<p class="text-zinc-500">Hashing…</p>`;
+        try {
+          const hash = await sha256Hex(await f.arrayBuffer());
+          if (!expectedHash) {
+            result.innerHTML = `
+              <p class="text-xs uppercase tracking-wider text-zinc-500 mb-1">Computed SHA-256</p>
+              <p class="font-mono text-xs break-all">${hash}</p>
+            `;
+            return;
+          }
+          const match = hash === expectedHash;
+          result.className = `block rounded-2xl border p-4 text-sm ${match ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-100/10 text-emerald-900 dark:text-emerald-300" : "border-rose-500 bg-rose-50 dark:bg-rose-100/10 text-rose-900 dark:text-rose-300"}`;
+          result.innerHTML = `
+            <p class="font-semibold mb-2">${match ? "✓ Match" : "✗ Mismatch"}</p>
+            <p class="text-xs text-zinc-600 dark:text-zinc-400 mb-1">Computed: <span class="font-mono">${fmt(hash)}</span></p>
+            <p class="text-xs text-zinc-600 dark:text-zinc-400 mb-2">Expected: <span class="font-mono">${fmt(expectedHash)}</span></p>
+            <p class="text-xs">${match ? "File matches the hash embedded in the watermark. Tamper-evidence verified." : "File has been modified after the watermark was applied."}</p>
+          `;
+        } catch {
+          result.innerHTML = `<p class="text-rose-600">Hashing failed.</p>`;
+        }
+      });
+    }
+  }
+</script>
