@@ -28,6 +28,12 @@ export default defineConfig({
       ],
     }),
   ],
+  build: {
+    // Inline the small BaseLayout CSS so the page never waits on a
+    // render-blocking stylesheet request. Trade ~5KB of HTML for one
+    // fewer round-trip and a faster LCP.
+    inlineStylesheets: "always",
+  },
   adapter,
   vite: {
     plugins: [tailwindcss() as any],
