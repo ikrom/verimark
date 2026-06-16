@@ -8,3 +8,9 @@ dist/
 !.env.example
 .vercel
 bun.lockb
+
+# Tooling artifacts
+playwright-report/
+test-results/
+lighthouse-*.report.html
+lighthouse-*.report.json

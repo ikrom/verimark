@@ -1,6 +1,7 @@
-import * as fabric from "fabric";
+import type * as Fabric from "fabric";
 
 export function buildTiledPattern(
+  fabricNs: typeof Fabric,
   text: string,
   options: {
     fontSize?: number;
@@ -9,8 +10,14 @@ export function buildTiledPattern(
     rotation?: number;
     fontFamily?: string;
   } = {},
-): fabric.Pattern {
-  const { fontSize = 24, color = "#000000", opacity = 0.2, rotation = -30, fontFamily = "Inter" } = options;
+): Fabric.Pattern {
+  const {
+    fontSize = 24,
+    color = "#000000",
+    opacity = 0.2,
+    rotation = -30,
+    fontFamily = "Inter",
+  } = options;
   const cw = 360;
   const ch = 220;
   const c = document.createElement("canvas");
@@ -27,24 +34,29 @@ export function buildTiledPattern(
   ctx.translate(cw / 2, ch / 2);
   ctx.rotate((rotation * Math.PI) / 180);
   ctx.fillText(text, 0, 0);
-  return new fabric.Pattern({ source: c, repeat: "repeat" });
+  return new fabricNs.Pattern({ source: c, repeat: "repeat" });
 }
 
 export function applyTiledWatermark(
-  canvas: fabric.Canvas,
+  fabricNs: typeof Fabric,
+  canvas: Fabric.Canvas,
   text: string,
-  options: Parameters<typeof buildTiledPattern>[1] = {},
+  options: Parameters<typeof buildTiledPattern>[2] = {},
 ): void {
   const existing = canvas
     .getObjects()
-    .find((o) => (o as fabric.Object & { __isTiledWatermark?: boolean }).__isTiledWatermark);
+    .find(
+      (o) =>
+        (o as Fabric.Object & { __isTiledWatermark?: boolean })
+          .__isTiledWatermark,
+    );
   if (existing) canvas.remove(existing);
   if (!text.trim()) {
     canvas.requestRenderAll();
     return;
   }
-  const pattern = buildTiledPattern(text, options);
-  const rect = new fabric.Rect({
+  const pattern = buildTiledPattern(fabricNs, text, options);
+  const rect = new fabricNs.Rect({
     left: 0,
     top: 0,
     width: canvas.getWidth(),
@@ -54,16 +66,22 @@ export function applyTiledWatermark(
     evented: false,
     excludeFromExport: false,
   });
-  (rect as fabric.Object & { __isTiledWatermark?: boolean }).__isTiledWatermark = true;
+  (
+    rect as Fabric.Object & { __isTiledWatermark?: boolean }
+  ).__isTiledWatermark = true;
   canvas.add(rect);
   canvas.sendObjectToBack(rect);
   canvas.requestRenderAll();
 }
 
-export function clearTiledWatermark(canvas: fabric.Canvas): void {
+export function clearTiledWatermark(canvas: Fabric.Canvas): void {
   const existing = canvas
     .getObjects()
-    .find((o) => (o as fabric.Object & { __isTiledWatermark?: boolean }).__isTiledWatermark);
+    .find(
+      (o) =>
+        (o as Fabric.Object & { __isTiledWatermark?: boolean })
+          .__isTiledWatermark,
+    );
   if (existing) {
     canvas.remove(existing);
     canvas.requestRenderAll();

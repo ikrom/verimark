@@ -6,7 +6,7 @@ import {
   type DragEvent,
   type ChangeEvent,
 } from "react";
-import * as fabric from "fabric";
+import type { Canvas, Textbox, FabricImage } from "fabric";
 import { useEditor, type WatermarkConfig } from "~/stores/editor";
 import { applyTiledWatermark, clearTiledWatermark } from "~/lib/tiledWatermark";
 import { exportCanvas } from "~/lib/export";
@@ -17,6 +17,11 @@ import { shortHash } from "~/lib/crypto";
 import { formatBytes } from "./hooks/useNetworkMonitor";
 import { useProvenance } from "./hooks/useProvenance";
 import { PrivacyMeter } from "./PrivacyMeter";
+
+// Fabric is ~300KB and only needed after a file is dropped. We load it
+// dynamically so the initial bundle stays small and the homepage hits
+// its LCP target without a huge JS payload.
+type FabricModule = typeof import("fabric");
 
 const FONT_FAMILIES = [
   { value: "Inter", label: "Inter" },
@@ -74,9 +79,10 @@ function getPositionCoords(
 export function Editor() {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const canvasElRef = useRef<HTMLCanvasElement>(null);
-  const fabricRef = useRef<fabric.Canvas | null>(null);
-  const textObjRef = useRef<fabric.Textbox | null>(null);
-  const qrImgRef = useRef<fabric.FabricImage | null>(null);
+  const fabricRef = useRef<Canvas | null>(null);
+  const textObjRef = useRef<Textbox | null>(null);
+  const qrImgRef = useRef<FabricImage | null>(null);
+  const fabricNsRef = useRef<FabricModule | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [detectedType, setDetectedType] = useState<Detected>("unknown");
   const [exportFormat, setExportFormat] = useState<"png" | "jpeg">("png");
@@ -129,6 +135,10 @@ export function Editor() {
     setIsLoading(true);
     void (async () => {
       try {
+        // Lazy-load Fabric.js (~300KB) only when the user actually picks a file.
+        const fabric = await import("fabric");
+        if (cancelled) return;
+        fabricNsRef.current = fabric;
         const img = await fabric.FabricImage.fromURL(url);
         if (cancelled) return;
         // Use underlying image element for true natural dimensions
@@ -182,7 +192,8 @@ export function Editor() {
 
   useEffect(() => {
     const canvas = fabricRef.current;
-    if (!canvas) return;
+    const fabric = fabricNsRef.current;
+    if (!canvas || !fabric) return;
     const cw = canvas.getWidth();
     const ch = canvas.getHeight();
     const presetPurpose = PRESETS.find((p) => p.id === presetId)?.purpose ?? "";
@@ -203,7 +214,7 @@ export function Editor() {
 
     if (config.mode === "tiled") {
       if (fullText.trim()) {
-        applyTiledWatermark(canvas, fullText, {
+        applyTiledWatermark(fabric, canvas, fullText, {
           fontSize: config.fontSize,
           color: config.color,
           opacity: config.opacity,
@@ -380,7 +391,7 @@ export function Editor() {
                   {error}
                 </p>
               )}
-              <p className="text-xs text-zinc-400 mt-4">
+              <p className="text-xs text-zinc-500 mt-4">
                 Magic-byte validation · 100MB cap · EXIF stripped on export
               </p>
             </div>
@@ -416,6 +427,8 @@ export function Editor() {
           </div>
           <div
             ref={wrapperRef}
+            aria-label="Watermark preview"
+            role="img"
             className="flex-1 relative flex items-center justify-center bg-zinc-100 dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden p-2 min-h-0"
           >
             <canvas
@@ -651,43 +664,45 @@ export function Editor() {
           </Section>
 
           <Section title="Export" className="mt-auto">
-            <div className="grid grid-cols-2 gap-1">
-              {(["png", "jpeg"] as const).map((f) => (
-                <button
-                  key={f}
-                  type="button"
-                  onClick={() => setExportFormat(f)}
-                  className={`px-2 py-1 rounded text-[11px] border uppercase ${
-                    exportFormat === f
-                      ? "border-accent-500 bg-accent-50 dark:bg-accent-100/10 text-accent-700 dark:text-accent-500"
-                      : "border-zinc-300 dark:border-zinc-700"
-                  }`}
-                >
-                  {f === "png" ? "PNG" : "JPG"}
-                </button>
-              ))}
+            <div aria-live="polite" aria-atomic="true">
+              <div className="grid grid-cols-2 gap-1">
+                {(["png", "jpeg"] as const).map((f) => (
+                  <button
+                    key={f}
+                    type="button"
+                    onClick={() => setExportFormat(f)}
+                    className={`px-2 py-1 rounded text-[11px] border uppercase ${
+                      exportFormat === f
+                        ? "border-accent-500 bg-accent-50 dark:bg-accent-100/10 text-accent-700 dark:text-accent-500"
+                        : "border-zinc-300 dark:border-zinc-700"
+                    }`}
+                  >
+                    {f === "png" ? "PNG" : "JPG"}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => void onExport()}
+                disabled={isExporting}
+                data-testid="download-btn"
+                className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-accent-600 hover:bg-accent-700 disabled:opacity-50 text-white px-3 py-1.5 text-xs font-medium transition"
+              >
+                {isExporting ? "Exporting…" : "Download"}
+              </button>
+              <button
+                type="button"
+                onClick={resetConfig}
+                className="w-full text-[10px] text-zinc-500 hover:text-zinc-700 underline"
+              >
+                Reset watermark settings
+              </button>
+              {error && (
+                <p className="text-[10px] text-rose-600" role="alert">
+                  {error}
+                </p>
+              )}
             </div>
-            <button
-              type="button"
-              onClick={() => void onExport()}
-              disabled={isExporting}
-              data-testid="download-btn"
-              className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-accent-600 hover:bg-accent-700 disabled:opacity-50 text-white px-3 py-1.5 text-xs font-medium transition"
-            >
-              {isExporting ? "Exporting…" : "Download"}
-            </button>
-            <button
-              type="button"
-              onClick={resetConfig}
-              className="w-full text-[10px] text-zinc-500 hover:text-zinc-700 underline"
-            >
-              Reset watermark settings
-            </button>
-            {error && (
-              <p className="text-[10px] text-rose-600" role="alert">
-                {error}
-              </p>
-            )}
           </Section>
         </aside>
       </div>

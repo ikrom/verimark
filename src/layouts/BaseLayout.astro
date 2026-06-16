@@ -10,34 +10,80 @@ interface Props {
 
 const { title, description } = Astro.props;
 const pageTitle = title ?? "Verimark — verifiable watermarks for personal files";
-const pageDesc = description ?? "Add a verifiable watermark to your confidential files. 100% client-side. SHA-256 provenance. Open source.";
+const pageDesc =
+  description ??
+  "Add a verifiable watermark to your confidential files. 100% client-side. SHA-256 provenance. Open source.";
 const siteUrl = "https://verimark.thetas.dev";
 const url = new URL(Astro.url.pathname, siteUrl).toString();
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  name: "Verimark",
+  description:
+    "Add a verifiable watermark to your confidential files. 100% client-side. SHA-256 provenance.",
+  url: "https://verimark.thetas.dev",
+  applicationCategory: "UtilitiesApplication",
+  operatingSystem: "Any (browser)",
+  browserRequirements: "Requires JavaScript. Requires HTML5.",
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "USD",
+  },
+  featureList: [
+    "100% client-side watermarking",
+    "SHA-256 file provenance with QR verification",
+    "Magic-byte file validation",
+    "EXIF metadata stripping",
+    "Tiled or single watermark modes",
+  ],
+};
 ---
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" class="h-full">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{pageTitle}</title>
     <meta name="description" content={pageDesc} />
+    <meta name="keywords" content="watermark, ktp, identity, privacy, client-side, sha256, provenance, secure, free, confidential, personal files" />
+    <meta name="author" content="Verimark" />
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large" />
+    <meta name="googlebot" content="index, follow" />
+    <meta name="theme-color" content="#4f46e5" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)" />
+    <meta name="application-name" content="Verimark" />
+    <meta name="apple-mobile-web-app-title" content="Verimark" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="format-detection" content="telephone=no" />
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={pageDesc} />
     <meta property="og:url" content={url} />
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Verimark" />
+    <meta property="og:locale" content="en_US" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="theme-color" content="#4f46e5" />
+    <meta name="twitter:site" content="@verimark" />
+    <meta name="twitter:creator" content="@verimark" />
     <link rel="canonical" href={url} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/inter-latin.woff2" crossorigin />
   </head>
   <body class="h-screen flex flex-col">
+    <a
+      href="#main"
+      class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:bg-accent-600 focus:text-white focus:px-3 focus:py-1.5 focus:rounded"
+    >
+      Skip to main content
+    </a>
     <Header />
-    <div class="flex-1 relative min-h-0 overflow-y-auto">
+    <main id="main" class="flex-1 relative min-h-0 overflow-y-auto">
       <slot />
-    </div>
+    </main>
     <Footer />
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
   </body>
 </html>

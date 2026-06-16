@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
+import * as fabric from "fabric";
 import { buildTiledPattern } from "./tiledWatermark";
 
 let originalGetContext: typeof HTMLCanvasElement.prototype.getContext;
@@ -38,7 +39,9 @@ beforeAll(() => {
     set lineJoin(_v: CanvasLineJoin) {},
     set globalCompositeOperation(_v: GlobalCompositeOperation) {},
   };
-  HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue(fakeCtx) as typeof HTMLCanvasElement.prototype.getContext;
+  HTMLCanvasElement.prototype.getContext = vi
+    .fn()
+    .mockReturnValue(fakeCtx) as typeof HTMLCanvasElement.prototype.getContext;
 });
 
 afterAll(() => {
@@ -47,13 +50,13 @@ afterAll(() => {
 
 describe("buildTiledPattern", () => {
   it("returns a Fabric Pattern instance", () => {
-    const p = buildTiledPattern("hello");
+    const p = buildTiledPattern(fabric, "hello");
     expect(p).toBeDefined();
     expect(p.repeat).toBe("repeat");
   });
 
   it("respects custom options", () => {
-    const p = buildTiledPattern("hi", {
+    const p = buildTiledPattern(fabric, "hi", {
       fontSize: 48,
       color: "#ff0000",
       opacity: 0.4,
@@ -64,10 +67,10 @@ describe("buildTiledPattern", () => {
   });
 
   it("handles empty text without throwing", () => {
-    expect(() => buildTiledPattern("")).not.toThrow();
+    expect(() => buildTiledPattern(fabric, "")).not.toThrow();
   });
 
   it("handles unicode text", () => {
-    expect(() => buildTiledPattern("Verifikasi ✓ · 🔒")).not.toThrow();
+    expect(() => buildTiledPattern(fabric, "Verifikasi ✓ · 🔒")).not.toThrow();
   });
 });

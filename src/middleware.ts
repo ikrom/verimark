@@ -14,9 +14,10 @@ export const onRequest = defineMiddleware(async (_, next) => {
   // We allow 'unsafe-inline' in script-src to match the runtime needs; the
   // equivalent vercel.json header in production should be kept in lock-step.
   // style-src keeps 'unsafe-inline' for Tailwind/inline-style compat.
+  // Fonts are self-hosted under /fonts/* — no external font origins needed.
   response.headers.set(
     "Content-Security-Policy",
-    "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'",
+    "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'",
   );
   return response;
 });
