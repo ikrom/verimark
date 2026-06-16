@@ -83,6 +83,7 @@ export function Editor() {
   const textObjRef = useRef<Textbox | null>(null);
   const qrImgRef = useRef<FabricImage | null>(null);
   const fabricNsRef = useRef<FabricModule | null>(null);
+  const requestIdRef = useRef(0);
   const [error, setError] = useState<string | null>(null);
   const [detectedType, setDetectedType] = useState<Detected>("unknown");
   const [exportFormat, setExportFormat] = useState<"png" | "jpeg">("png");
@@ -194,6 +195,7 @@ export function Editor() {
     const canvas = fabricRef.current;
     const fabric = fabricNsRef.current;
     if (!canvas || !fabric) return;
+    const requestId = ++requestIdRef.current;
     const cw = canvas.getWidth();
     const ch = canvas.getHeight();
     const presetPurpose = PRESETS.find((p) => p.id === presetId)?.purpose ?? "";
@@ -203,8 +205,17 @@ export function Editor() {
       config.includeHash ? shortHash(hash) : "",
     );
 
-    if (textObjRef.current) {
-      canvas.remove(textObjRef.current);
+    // Capture user's resized/rotated textbox state so the next render preserves it
+    const existingTb = textObjRef.current as
+      | (Textbox & { _userResized?: boolean })
+      | null;
+    const userWidth = existingTb?.width;
+    const userAngle = existingTb?.angle;
+    const userLeft = existingTb?.left;
+    const userTop = existingTb?.top;
+
+    if (existingTb) {
+      canvas.remove(existingTb);
       textObjRef.current = null;
     }
     if (qrImgRef.current) {
@@ -239,15 +250,33 @@ export function Editor() {
       fontFamily: config.fontFamily,
       fill: config.color,
       opacity: config.opacity,
-      angle: config.rotation,
+      angle: userAngle ?? config.rotation,
       textAlign: "center",
       originX: "left",
       originY: "top",
+      width: userWidth,
+      // bold + easy-to-grab selection:
+      borderColor: "#4f46e5",
+      borderScaleFactor: 4,
+      borderDashArray: [6, 4],
+      cornerColor: "#4f46e5",
+      cornerStrokeColor: "#ffffff",
+      cornerSize: 14,
+      cornerStyle: "circle",
+      transparentCorners: false,
+      padding: 4,
+      lockScalingFlip: true,
     });
-    const tbW = tb.width ?? 200;
-    const tbH = tb.height ?? 60;
-    const coords = getPositionCoords(config.position, cw, ch, tbW, tbH);
-    tb.set(coords);
+
+    // Position: preserve user's drag if any, else use the position preset
+    if (userLeft !== undefined && userTop !== undefined) {
+      tb.set({ left: userLeft, top: userTop });
+    } else {
+      const tbW = tb.width ?? 200;
+      const tbH = tb.height ?? 60;
+      const coords = getPositionCoords(config.position, cw, ch, tbW, tbH);
+      tb.set(coords);
+    }
     canvas.add(tb);
     textObjRef.current = tb;
     canvas.setActiveObject(tb);
@@ -257,7 +286,10 @@ export function Editor() {
       void (async () => {
         try {
           const dataUrl = await toDataURL(verifyUrl, 80);
+          // STALE CHECK: config or canvas changed while we were awaiting, abort
+          if (requestIdRef.current !== requestId) return;
           const qrImg = await fabric.FabricImage.fromURL(dataUrl);
+          if (requestIdRef.current !== requestId) return;
           const size = Math.min(60, Math.floor(Math.min(cw, ch) * 0.15));
           qrImg.set({
             left: cw - size - 12,
