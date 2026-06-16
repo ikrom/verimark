@@ -20,7 +20,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "bun run build && bun run preview --host 127.0.0.1",
+    command:
+      "ASTRO_ADAPTER=node bun run build && ASTRO_ADAPTER=node bun run preview --host 127.0.0.1",
     url: "http://localhost:4321",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

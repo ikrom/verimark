@@ -47,3 +47,18 @@ describe("editor store", () => {
     expect(useEditor.getState().config).toEqual(DEFAULT_CONFIG);
   });
 });
+
+describe("editor store v1 flags", () => {
+  it("DEFAULT_CONFIG has includeQR true and v1 flags false", () => {
+    expect(DEFAULT_CONFIG.includeQR).toBe(true);
+    expect(DEFAULT_CONFIG.faceBlur).toBe(false);
+    expect(DEFAULT_CONFIG.ocrRedact).toBe(false);
+  });
+
+  it("can update includeQR independently of includeHash", () => {
+    useEditor.getState().updateConfig({ includeQR: false });
+    const cfg = useEditor.getState().config;
+    expect(cfg.includeQR).toBe(false);
+    expect(cfg.includeHash).toBe(DEFAULT_CONFIG.includeHash);
+  });
+});

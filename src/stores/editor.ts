@@ -19,7 +19,10 @@ export interface WatermarkConfig {
     | "bottom"
     | "bottom-right";
   includeDate: boolean;
-  includeHash: boolean;
+  includeHash: boolean; // text hash (manual)
+  includeQR: boolean; // QR code in corner
+  faceBlur: boolean; // v1 placeholder
+  ocrRedact: boolean; // v1 placeholder
 }
 
 export const DEFAULT_CONFIG: WatermarkConfig = {
@@ -33,6 +36,9 @@ export const DEFAULT_CONFIG: WatermarkConfig = {
   position: "center",
   includeDate: true,
   includeHash: true,
+  includeQR: true,
+  faceBlur: false,
+  ocrRedact: false,
 };
 
 interface EditorState {
